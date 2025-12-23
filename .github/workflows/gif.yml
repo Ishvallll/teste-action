@@ -1,0 +1,32 @@
+name: GIF to Frames
+
+on:
+  push:
+    paths:
+      - "gifs/*.gif"
+
+jobs:
+  convert:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install ffmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - name: Extract frames
+        run: |
+          for gif in gifs/*.gif; do
+            [ -f "$gif" ] || continue
+            name=$(basename "$gif" .gif)
+            mkdir -p gifs/$name
+            ffmpeg -i "$gif" gifs/$name/frame_%03d.png
+          done
+
+      - name: Commit frames
+        run: |
+          git config user.name "gif-bot"
+          git config user.email "gif-bot@users.noreply.github.com"
+          git add gifs/
+          git commit -m "Extract GIF frames" || echo "Nothing to commit"
+          git push
